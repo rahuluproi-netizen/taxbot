@@ -32,18 +32,20 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
+    // 3. Generate Embeddings & Upsert to Pinecone in parallel
+    // BOLT OPTIMIZATION: Parallelizing these calls reduces indexing time by processing chunks concurrently.
+    // This significantly speeds up document processing for larger PDFs.
+    await Promise.all(chunks.map(async (chunk, i) => {
+        const embedding = await generateEmbedding(chunk);
         const id = `${req.user.id}_${Date.now()}_${i}`;
         
         await upsertVector(id, embedding, {
-            text: chunks[i],
+            text: chunk,
             caId: req.user.id,
             filename: req.file.originalname,
             chunkIndex: i
         });
-    }
+    }));
 
     // 4. (Optional) Store in Supabase Storage
     // const { error } = await supabase.storage.from('tax-documents').upload(`${req.user.id}/${req.file.originalname}`, dataBuffer);
