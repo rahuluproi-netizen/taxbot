@@ -34,15 +34,15 @@ export default function BottomNav() {
   return (
     <div className="mobile-only" style={navStyle}>
       <Link href="/dashboard" style={linkStyle(pathname === '/dashboard')}>
-        <span style={{ fontSize: '1.2rem' }}>🏠</span>
+        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">🏠</span>
         <span>Home</span>
       </Link>
       <Link href="/chat" style={linkStyle(pathname === '/chat')}>
-        <span style={{ fontSize: '1.2rem' }}>💬</span>
+        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">💬</span>
         <span>AI Assistant</span>
       </Link>
       <Link href="/login" onClick={() => localStorage.clear()} style={linkStyle(false)}>
-        <span style={{ fontSize: '1.2rem' }}>👤</span>
+        <span style={{ fontSize: '1.2rem' }} aria-hidden="true">👤</span>
         <span>Profile</span>
       </Link>
     </div>
