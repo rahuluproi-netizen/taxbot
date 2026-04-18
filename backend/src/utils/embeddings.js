@@ -18,4 +18,21 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings for multiple text chunks in parallel.
+ * @param {string[]} texts - Array of input texts.
+ * @returns {Promise<number[][]>} - Array of vector embeddings.
+ */
+async function generateEmbeddings(texts) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const tasks = texts.map(text => model.embedContent(text));
+    const results = await Promise.all(tasks);
+    return results.map(result => result.embedding.values);
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = { generateEmbedding, generateEmbeddings };
