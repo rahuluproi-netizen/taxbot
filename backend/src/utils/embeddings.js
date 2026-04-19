@@ -18,4 +18,18 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings for multiple chunks in parallel.
+ * @param {string[]} texts - Array of input texts.
+ * @returns {Promise<number[][]>} - Array of vector embeddings.
+ */
+async function generateEmbeddings(texts) {
+  try {
+    return await Promise.all(texts.map(text => generateEmbedding(text)));
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = { generateEmbedding, generateEmbeddings };
