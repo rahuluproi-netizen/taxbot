@@ -1,0 +1,3 @@
+## 2025-05-15 - Chat Widget Accessibility & Focus Management
+**Learning:** Floating UI components like chat widgets often lack the necessary ARIA attributes (`role="dialog"`, `aria-label`) and focus management required for a seamless screen reader and keyboard experience. Additionally, icon-only buttons and emojis are frequently inaccessible to assistive technologies without explicit labels.
+**Action:** Always implement `role="dialog"` and `aria-label` for modal-like floating widgets. Ensure icon-only buttons have descriptive `aria-label` attributes and emojis are wrapped in `<span role="img" aria-label="...">`. Use `useEffect` to automatically move focus to the primary interaction element (e.g., input) when the widget is opened.
