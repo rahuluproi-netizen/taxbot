@@ -1,0 +1,3 @@
+## 2025-04-25 - Batched AI Indexing for Performance
+**Learning:** Sequential network calls in AI RAG pipelines create a significant bottleneck (N$ sequential requests). Transitioning to batched embeddings (Gemini) and batched upserts (Pinecone) reduces round-trips from linear to constant (relative to batch size), providing an order-of-magnitude speedup for document indexing. Reusing model instances outside request handlers also avoids redundant configuration overhead.
+**Action:** Always prefer batch APIs for embeddings and vector storage when processing multiple data points. Maintain model instances at the module level to optimize cold-start and request latency.
