@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
 /**
  * Generates an embedding for a given text using Gemini.
@@ -9,7 +10,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function generateEmbedding(text) {
   try {
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const result = await model.embedContent(text);
     return result.embedding.values;
   } catch (error) {
@@ -18,4 +18,23 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings for multiple texts in batch using Gemini.
+ * @param {string[]} texts - Array of input texts.
+ * @returns {Promise<number[][]>} - Array of vector embeddings.
+ */
+async function generateEmbeddings(texts) {
+  try {
+    const result = await model.batchEmbedContents({
+      requests: texts.map((text) => ({
+        content: { role: 'user', parts: [{ text }] },
+      })),
+    });
+    return result.embeddings.map((e) => e.values);
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = { generateEmbedding, generateEmbeddings };
