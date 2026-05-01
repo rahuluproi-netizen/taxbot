@@ -1,0 +1,3 @@
+## 2026-05-01 - [Focus management and ARIA enhancements in ChatWidget]
+**Learning:** For floating UI widgets like chat assistants, simple visibility toggles are insufficient for keyboard and screen reader users. Proper accessibility requires explicit role definitions (`role="dialog"`), descriptive labels for icon-only buttons, and proactive focus management (auto-focus on open, focus restoration on close).
+**Action:** Always implement `useRef` for trigger and input elements in modal-like components to manage focus transitions, and use `isFirstMount` guard to prevent focus hijacking on initial render.
