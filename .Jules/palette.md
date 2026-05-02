@@ -1,0 +1,3 @@
+## 2026-05-02 - [Accessibility & Focus Management in Chat Widgets]
+**Learning:** Floating UI widgets like chat bots often break keyboard navigation flow. Implementing explicit focus management (focusing the input on open and restoring focus to the trigger on close) is essential for accessibility. Additionally, icon-only buttons MUST have descriptive ARIA labels to be usable by screen reader users.
+**Action:** Always implement `useEffect` with refs to manage focus transitions in modal-like components, and ensure all emoji/icon-based buttons are wrapped in semantic spans with appropriate ARIA attributes.
