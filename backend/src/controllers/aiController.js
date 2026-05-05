@@ -1,11 +1,12 @@
 const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
-const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const fs = require('fs').promises;
+const { generateEmbedding, generateEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const BATCH_SIZE = 100;
 
 // Helper to chunk text
 function chunkText(text, size = 1000, overlap = 200) {
@@ -24,7 +25,7 @@ exports.uploadKnowledge = async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
     // 1. Parse PDF
-    const dataBuffer = fs.readFileSync(req.file.path);
+    const dataBuffer = await fs.readFile(req.file.path);
     const pdfData = await pdf(dataBuffer);
     const text = pdfData.text;
 
@@ -32,24 +33,31 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
-        });
+    // 3. Generate Embeddings & Upsert to Pinecone in Batches
+    const timestamp = Date.now();
+    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+      const batchChunks = chunks.slice(i, i + BATCH_SIZE);
+      const embeddings = await generateEmbeddings(batchChunks);
+
+      const vectors = batchChunks.map((chunk, index) => ({
+        id: `${req.user.id}_${timestamp}_${i + index}`,
+        values: embeddings[index],
+        metadata: {
+          text: chunk,
+          caId: req.user.id,
+          filename: req.file.originalname,
+          chunkIndex: i + index
+        }
+      }));
+
+      await upsertVectors(vectors);
     }
 
     // 4. (Optional) Store in Supabase Storage
     // const { error } = await supabase.storage.from('tax-documents').upload(`${req.user.id}/${req.file.originalname}`, dataBuffer);
 
     // Cleanup temp file
-    fs.unlinkSync(req.file.path);
+    await fs.unlink(req.file.path);
 
     res.json({ message: 'Document indexed successfully!', chunks: chunks.length });
   } catch (error) {
