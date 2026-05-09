@@ -1,0 +1,3 @@
+## 2026-05-09 - Batched Document Indexing
+**Learning:** Sequential O(N) network requests for embeddings and vector upserts create a significant bottleneck in RAG pipelines. Batching these operations reduces network overhead by orders of magnitude (e.g., 83x for 250 chunks). Additionally, synchronous file I/O in Node.js backends blocks the event loop, which can be easily avoided by using `fs.promises`.
+**Action:** Always look for N+1 patterns in external API integrations and leverage batch APIs (like Gemini's `batchEmbedContents` and Pinecone's batch upsert) to optimize throughput. Use `fs.promises` for all file operations in the backend.
