@@ -11,8 +11,36 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const isFirstMount = useRef(true);
   
   const supabase = createClient();
+
+  // Focus management
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    if (isOpen) {
+      inputRef.current?.focus();
+    } else {
+      toggleRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  // Escape key listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,7 +70,7 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting.' }]);
     } finally {
       setLoading(false);
@@ -54,23 +82,30 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       {!isOpen && (
         <button 
+          ref={toggleRef}
           onClick={() => setIsOpen(true)}
+          aria-label="Open chat"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span role="img" aria-label="chat icon">💬</span>
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="glass-panel" style={{
-          width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
-          borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-        }}>
+        <div
+          className="glass-panel"
+          role="dialog"
+          aria-label="Chat with TaxBot AI"
+          style={{
+            width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
+            borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}
+        >
           {/* Header */}
           <div style={{ 
             background: 'var(--primary)', color: '#fff', padding: '1rem 1.5rem', 
@@ -79,6 +114,7 @@ export default function ChatWidget() {
             <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
             <button 
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
             >
               ✕
@@ -98,13 +134,14 @@ export default function ChatWidget() {
                 {msg.content}
               </div>
             ))}
-            {loading && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Assistant is typing...</div>}
+            {loading && <div aria-live="polite" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Assistant is typing...</div>}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <div style={{ padding: '1rem', background: 'var(--surface)', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem' }}>
             <input 
+              ref={inputRef}
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -114,6 +151,7 @@ export default function ChatWidget() {
             />
             <button 
               onClick={handleSend}
+              aria-label="Send message"
               style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
             >
               ➤
