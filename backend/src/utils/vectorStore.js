@@ -51,4 +51,17 @@ async function queryVectors(vector, filter = {}, topK = 5) {
   }
 }
 
-module.exports = { upsertVector, queryVectors };
+/**
+ * Upserts multiple vectors into Pinecone in a single batch.
+ * @param {Array<object>} vectors - Array of objects containing id, values, and metadata.
+ */
+async function upsertVectors(vectors) {
+  try {
+    await index.upsert(vectors);
+  } catch (error) {
+    console.error('Error batch upserting to Pinecone:', error);
+    throw error;
+  }
+}
+
+module.exports = { upsertVector, upsertVectors, queryVectors };
