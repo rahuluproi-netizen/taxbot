@@ -11,8 +11,30 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFirstMount = useRef(true);
   
   const supabase = createClient();
+
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    } else if (!isFirstMount.current) {
+      triggerRef.current?.focus();
+    }
+    isFirstMount.current = false;
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,7 +64,7 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting.' }]);
     } finally {
       setLoading(false);
@@ -54,31 +76,39 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       {!isOpen && (
         <button 
+          ref={triggerRef}
           onClick={() => setIsOpen(true)}
+          aria-label="Open TaxBot AI Assistant"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span aria-hidden="true">💬</span>
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="glass-panel" style={{
-          width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
-          borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-        }}>
+        <div
+          className="glass-panel"
+          role="dialog"
+          aria-label="TaxBot AI Assistant"
+          style={{
+            width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
+            borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}
+        >
           {/* Header */}
           <div style={{ 
             background: 'var(--primary)', color: '#fff', padding: '1rem 1.5rem', 
             display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
           }}>
-            <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>TaxBot AI Assistant</h2>
             <button 
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
             >
               ✕
@@ -86,7 +116,10 @@ export default function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--background)' }}>
+          <div
+            aria-live="polite"
+            style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--background)' }}
+          >
             {messages.map((msg, i) => (
               <div key={i} style={{
                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
@@ -105,6 +138,7 @@ export default function ChatWidget() {
           {/* Input */}
           <div style={{ padding: '1rem', background: 'var(--surface)', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem' }}>
             <input 
+              ref={inputRef}
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -114,6 +148,7 @@ export default function ChatWidget() {
             />
             <button 
               onClick={handleSend}
+              aria-label="Send message"
               style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
             >
               ➤

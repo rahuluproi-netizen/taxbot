@@ -1,0 +1,3 @@
+## 2025-05-14 - ChatWidget Accessibility & Micro-interactions
+**Learning:** Floating UI components like `ChatWidget` require explicit focus management (auto-focusing on open, restoring focus on close) and keyboard listeners (Escape key) to meet accessibility standards and provide a smooth user experience. Semantic HTML like `<h2>` for headers and `role="dialog"` for the container are essential for screen reader navigation.
+**Action:** Always implement focus management and keyboard shortcuts for interactive floating elements, and ensure all icon-only buttons have descriptive `aria-label` attributes.
