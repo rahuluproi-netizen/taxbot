@@ -11,12 +11,39 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   
   const supabase = createClient();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  // Restore focus to toggle button when chat is closed
+  const wasOpen = useRef(isOpen);
+  useEffect(() => {
+    if (wasOpen.current && !isOpen) {
+      toggleRef.current?.focus();
+    }
+    wasOpen.current = isOpen;
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -42,7 +69,7 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting.' }]);
     } finally {
       setLoading(false);
@@ -54,34 +81,42 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       {!isOpen && (
         <button 
+          ref={toggleRef}
           onClick={() => setIsOpen(true)}
+          aria-label="Open chat"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span role="img" aria-label="chat icon">💬</span>
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="glass-panel" style={{
-          width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
-          borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-        }}>
+        <div
+          className="glass-panel"
+          role="dialog"
+          aria-label="TaxBot AI Assistant Chat"
+          style={{
+            width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
+            borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}
+        >
           {/* Header */}
           <div style={{ 
             background: 'var(--primary)', color: '#fff', padding: '1rem 1.5rem', 
             display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
           }}>
-            <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
+            <h2 style={{ fontWeight: 600, margin: 0, fontSize: '1rem' }}>TaxBot AI Assistant</h2>
             <button 
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
             >
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
 
@@ -98,25 +133,37 @@ export default function ChatWidget() {
                 {msg.content}
               </div>
             ))}
-            {loading && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Assistant is typing...</div>}
+            {loading && (
+              <div aria-live="polite" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Assistant is typing...
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <div style={{ padding: '1rem', background: 'var(--surface)', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem' }}>
             <input 
+              ref={inputRef}
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your query..."
               style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
             />
             <button 
               onClick={handleSend}
-              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+              style={{
+                background: loading || !input.trim() ? 'var(--text-secondary)' : 'var(--primary)',
+                color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !input.trim() ? 0.7 : 1
+              }}
             >
-              ➤
+              <span aria-hidden="true">➤</span>
             </button>
           </div>
         </div>
