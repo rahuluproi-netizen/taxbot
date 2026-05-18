@@ -2,8 +2,8 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -23,8 +23,8 @@ exports.uploadKnowledge = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    // 1. Parse PDF
-    const dataBuffer = fs.readFileSync(req.file.path);
+    // 1. Parse PDF using fs.promises for non-blocking I/O
+    const dataBuffer = await fs.promises.readFile(req.file.path);
     const pdfData = await pdf(dataBuffer);
     const text = pdfData.text;
 
@@ -32,24 +32,40 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
+    // 3. Generate Embeddings & Upsert to Pinecone in batches
+    // BATCH_SIZE is 100 as per Gemini batch limit
+    const BATCH_SIZE = 100;
+    const timestamp = Date.now(); // Hoisted for efficiency and consistency
+
+    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batchChunks = chunks.slice(i, i + BATCH_SIZE);
+
+        // ⚡ Bolt: Batch generate embeddings to reduce network roundtrips
+        const batchEmbeddings = await generateBatchEmbeddings(batchChunks);
         
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
+        const vectors = batchEmbeddings.map((embedding, index) => {
+            const chunkIdx = i + index;
+            return {
+                id: `${req.user.id}_${timestamp}_${chunkIdx}`,
+                values: embedding,
+                metadata: {
+                    text: batchChunks[index],
+                    caId: req.user.id,
+                    filename: req.file.originalname,
+                    chunkIndex: chunkIdx
+                }
+            };
         });
+
+        // ⚡ Bolt: Batch upsert to Pinecone for faster indexing
+        await upsertVectors(vectors);
     }
 
     // 4. (Optional) Store in Supabase Storage
     // const { error } = await supabase.storage.from('tax-documents').upload(`${req.user.id}/${req.file.originalname}`, dataBuffer);
 
-    // Cleanup temp file
-    fs.unlinkSync(req.file.path);
+    // Cleanup temp file using fs.promises
+    await fs.promises.unlink(req.file.path);
 
     res.json({ message: 'Document indexed successfully!', chunks: chunks.length });
   } catch (error) {
