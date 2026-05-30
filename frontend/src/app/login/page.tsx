@@ -46,7 +46,7 @@ export default function Login() {
 
         window.location.href = role === 'Admin' ? '/admin' : role === 'CA' ? '/ca-panel' : '/dashboard';
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -63,8 +63,9 @@ export default function Login() {
         {error && <div style={{ color: 'var(--error)', marginBottom: '1rem', textAlign: 'center', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Email</label>
+            <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Email</label>
             <input 
+              id="email"
               type="email" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
@@ -73,8 +74,9 @@ export default function Login() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Password</label>
+            <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Password</label>
             <input 
+              id="password"
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
@@ -87,7 +89,7 @@ export default function Login() {
           </button>
         </form>
         <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          Don't have an account? <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign up</Link>
+          Don&apos;t have an account? <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign up</Link>
         </p>
       </div>
     </div>
