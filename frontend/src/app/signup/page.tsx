@@ -58,7 +58,7 @@ export default function Signup() {
 
         window.location.href = formData.role === 'Admin' ? '/admin' : formData.role === 'CA' ? '/ca-panel' : '/dashboard';
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -79,8 +79,9 @@ export default function Signup() {
         {error && <div style={{ color: 'var(--error)', marginBottom: '1rem', textAlign: 'center', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Full Name</label>
+            <label htmlFor="name" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Full Name</label>
             <input 
+              id="name"
               type="text" 
               name="name"
               value={formData.name} 
@@ -90,8 +91,9 @@ export default function Signup() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Email</label>
+            <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Email</label>
             <input 
+              id="email"
               type="email" 
               name="email"
               value={formData.email} 
@@ -101,8 +103,9 @@ export default function Signup() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Password</label>
+            <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Password</label>
             <input 
+              id="password"
               type="password" 
               name="password"
               value={formData.password} 
@@ -112,8 +115,9 @@ export default function Signup() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Account Type</label>
+            <label htmlFor="role" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Account Type</label>
             <select 
+              id="role"
               name="role" 
               value={formData.role} 
               onChange={handleChange} 
