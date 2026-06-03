@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MOCK_KEY');
 
 /**
  * Generates an embedding for a given text using Gemini.
@@ -18,4 +18,39 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings for multiple text chunks using Gemini batch API.
+ * Reduces network overhead from O(N) to O(N/100).
+ * @param {string[]} texts - Array of input texts.
+ * @returns {Promise<number[][]>} - Array of vector embeddings.
+ */
+async function generateBatchEmbeddings(texts) {
+  if (!texts || texts.length === 0) return [];
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const batchSize = 100; // Gemini limit for batchEmbedContents
+    let allEmbeddings = [];
+
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const chunk = texts.slice(i, i + batchSize);
+      const result = await model.batchEmbedContents({
+        requests: chunk.map(text => ({
+          content: { role: 'user', parts: [{ text }] },
+          taskType: 'RETRIEVAL_DOCUMENT'
+        }))
+      });
+
+      if (result.embeddings) {
+        allEmbeddings = allEmbeddings.concat(result.embeddings.map(e => e.values));
+      }
+    }
+
+    return allEmbeddings;
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = { generateEmbedding, generateBatchEmbeddings };
