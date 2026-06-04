@@ -5,8 +5,8 @@ import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
 export default function ClientDashboard() {
-  const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
   const supabase = createClient();
+  const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {

@@ -6,11 +6,10 @@ import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
 export default function Signup() {
+  const supabase = createClient();
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Client' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
