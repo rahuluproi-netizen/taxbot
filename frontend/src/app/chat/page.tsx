@@ -5,14 +5,13 @@ import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
 export default function ChatPage() {
+  const supabase = createClient();
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
     { role: 'assistant', content: 'Welcome to the Tax Assistant portal. I can help with ITR, GST, TDS, and more. What is on your mind?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const supabase = createClient();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

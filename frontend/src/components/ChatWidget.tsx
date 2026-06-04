@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/utils/supabase';
 
 export default function ChatWidget() {
+  const supabase = createClient();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
     { role: 'assistant', content: 'Hi! Need quick help with taxes or documentation? Ask me anything.' }
@@ -11,8 +12,6 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const supabase = createClient();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
