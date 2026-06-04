@@ -1,0 +1,3 @@
+## 2026-06-04 - Enhance ChatWidget accessibility and keyboard navigation
+**Learning:** Floating interactive components like chat widgets require explicit focus management (using refs to track trigger and internal inputs) and keyboard listeners (like 'Escape') to ensure they are accessible and pleasant for keyboard and screen reader users. ARIA labels on icon-only buttons are essential for screen reader users to understand the purpose of interactive elements.
+**Action:** Always implement focus restoration to the trigger element when closing a floating UI, and ensure all icon-only buttons have descriptive ARIA labels.
