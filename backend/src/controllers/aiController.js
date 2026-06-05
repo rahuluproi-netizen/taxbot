@@ -2,8 +2,8 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -32,17 +32,31 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
+    // 3. Generate Embeddings & Upsert to Pinecone (Optimized with batching)
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+      const batchChunks = chunks.slice(i, i + BATCH_SIZE);
+
+      // Generate all embeddings for the batch in one API call
+      const embeddings = await generateBatchEmbeddings(batchChunks);
+
+      const vectors = batchChunks.map((chunk, index) => {
+        const chunkIdx = i + index;
+        return {
+          id: `${req.user.id}_${Date.now()}_${chunkIdx}`,
+          values: embeddings[index],
+          metadata: {
+            text: chunk,
             caId: req.user.id,
             filename: req.file.originalname,
-            chunkIndex: i
-        });
+            chunkIndex: chunkIdx
+          }
+        };
+      });
+
+      // Upsert the batch of vectors in one call
+      await upsertVectors(vectors);
+      console.log(`Indexed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)}`);
     }
 
     // 4. (Optional) Store in Supabase Storage
