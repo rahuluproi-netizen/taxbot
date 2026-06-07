@@ -1,17 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
 export default function CaPanel() {
   const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tickets, setTickets] = useState<any[]>([]);
   const [stats, setStats] = useState({ clients: 0, tickets: 0, solved: 0 });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   
-  const supabase = createClient();
+  // Memoize supabase client to avoid re-initialization logic on every render
+  const supabase = useMemo(() => createClient(), []);
+
+  const fetchDashboardData = useCallback(async (userId: string) => {
+    const { data: ticketData } = await supabase
+      .from('tickets')
+      .select('*, clients(name, email)')
+      .eq('ca_id', userId);
+
+    setTickets(ticketData || []);
+
+    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
+    setStats({
+      clients: clientCount || 0,
+      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
+      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
+    });
+  }, [supabase]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -29,23 +47,7 @@ export default function CaPanel() {
       }
     };
     checkUser();
-  }, []);
-
-  const fetchDashboardData = async (userId: string) => {
-    const { data: ticketData } = await supabase
-      .from('tickets')
-      .select('*, clients(name, email)')
-      .eq('ca_id', userId);
-    
-    setTickets(ticketData || []);
-
-    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
-    setStats({
-      clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
-    });
-  };
+  }, [supabase, fetchDashboardData]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -74,7 +76,7 @@ export default function CaPanel() {
       } else {
         setUploadMessage(`Error: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       setUploadMessage('An error occurred during upload.');
     } finally {
       setUploadLoading(false);

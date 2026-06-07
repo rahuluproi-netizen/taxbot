@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
@@ -12,7 +12,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const supabase = createClient();
+  // Memoize supabase client to avoid re-initialization logic on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,7 +48,7 @@ export default function ChatPage() {
       const data = await res.json();
       
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'An error occurred. Please try again.' }]);
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
@@ -10,7 +10,8 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const supabase = createClient();
+  // Memoize supabase client to avoid re-initialization logic on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +59,7 @@ export default function Signup() {
 
         window.location.href = formData.role === 'Admin' ? '/admin' : formData.role === 'CA' ? '/ca-panel' : '/dashboard';
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
