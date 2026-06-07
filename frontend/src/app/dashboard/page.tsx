@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
 export default function ClientDashboard() {
   const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
-  const supabase = createClient();
+
+  // Memoize supabase client to avoid re-initialization logic on every render
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -32,7 +34,7 @@ export default function ClientDashboard() {
     };
 
     checkUser();
-  }, []);
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
