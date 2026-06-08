@@ -1,0 +1,3 @@
+## 2025-05-14 - Focus Restoration and Keyboard Support in Floating Widgets
+**Learning:** For floating interactive widgets (like chat windows) in React, using a `wasOpen` ref inside a `useEffect` is an effective pattern to restore focus to the trigger element only when the widget is specifically transitioning from open to closed. This prevents incorrect focus behavior on initial mount. Additionally, global 'Escape' key listeners are essential for accessibility in these components.
+**Action:** Always implement a `wasOpen` ref to manage focus restoration and a cleanup-ready 'Escape' key listener when building floating or modal-like UI components.
