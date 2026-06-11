@@ -1,0 +1,3 @@
+## 2025-05-14 - Focus Restoration and Keyboard Accessibility for Floating Widgets
+**Learning:** For floating interactive components like chat widgets, accessibility requires more than just ARIA labels. Proper focus management—restoring focus to the trigger element on close and auto-focusing the primary input on open—is crucial for keyboard users to maintain context. Additionally, implementing an 'Escape' key listener ensures the widget can be dismissed easily without hunting for a close button.
+**Action:** Always implement `useRef` for trigger and input elements, and use a `wasOpen` ref to handle focus restoration logic in a `useEffect` hook whenever building modal-like or floating UI components.
