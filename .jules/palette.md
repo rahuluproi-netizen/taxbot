@@ -1,0 +1,3 @@
+## 2025-05-14 - Focus Management and ARIA in Chat Widgets
+**Learning:** Implementing focus restoration in React 19 requires careful tracking of state transitions. Using a `prevOpen` ref in a `useEffect` is an effective pattern to distinguish between the initial render and subsequent state changes (like closing a widget). This ensures focus is returned to the triggering element only when the widget is explicitly closed by the user, maintaining a seamless keyboard navigation experience.
+**Action:** Always use a `prevOpen` ref when implementing focus restoration logic for elements that unmount, and ensure all icon-only buttons have explicit ARIA labels.
