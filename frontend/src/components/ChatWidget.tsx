@@ -19,7 +19,7 @@ export default function ChatWidget() {
   }, [messages, isOpen]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
@@ -42,7 +42,7 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting.' }]);
     } finally {
       setLoading(false);
@@ -60,6 +60,7 @@ export default function ChatWidget() {
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
+          aria-label="Open Chat"
         >
           💬
         </button>
@@ -80,6 +81,7 @@ export default function ChatWidget() {
             <button 
               onClick={() => setIsOpen(false)}
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
+              aria-label="Close Chat"
             >
               ✕
             </button>
@@ -98,7 +100,7 @@ export default function ChatWidget() {
                 {msg.content}
               </div>
             ))}
-            {loading && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Assistant is typing...</div>}
+            {loading && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }} aria-live="polite">Assistant is typing...</div>}
             <div ref={messagesEndRef} />
           </div>
 
@@ -108,13 +110,34 @@ export default function ChatWidget() {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your query..."
-              style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
+              disabled={loading}
+              aria-label="Chat input"
+              style={{
+                flex: 1,
+                padding: '0.6rem 1rem',
+                borderRadius: '20px',
+                border: '1px solid var(--border)',
+                background: 'var(--background)',
+                color: 'var(--text-primary)',
+                opacity: loading ? 0.7 : 1
+              }}
             />
             <button 
               onClick={handleSend}
-              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+              style={{
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !input.trim() ? 0.7 : 1
+              }}
             >
               ➤
             </button>
