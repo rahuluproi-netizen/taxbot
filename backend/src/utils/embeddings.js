@@ -18,4 +18,28 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings for a batch of text chunks (max 100).
+ * @param {string[]} texts - Array of text chunks.
+ * @returns {Promise<number[][]>} - Array of embeddings.
+ */
+async function generateBatchEmbeddings(texts) {
+  try {
+    if (texts.length === 0) return [];
+    if (texts.length > 100) throw new Error('Batch size exceeds maximum of 100');
+
+    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const requests = texts.map(text => ({
+      content: { role: 'user', parts: [{ text }] },
+      taskType: 'RETRIEVAL_DOCUMENT'
+    }));
+
+    const result = await model.batchEmbedContents({ requests });
+    return result.embeddings.map(e => e.values);
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = { generateEmbedding, generateBatchEmbeddings };
