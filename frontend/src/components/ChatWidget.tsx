@@ -11,11 +11,19 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const prevOpen = useRef(isOpen);
   
   const supabase = createClient();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+    // Focus restoration when closing chat
+    if (prevOpen.current && !isOpen) {
+      toggleRef.current?.focus();
+    }
+    prevOpen.current = isOpen;
   }, [messages, isOpen]);
 
   const handleSend = async () => {
@@ -54,7 +62,9 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       {!isOpen && (
         <button 
+          ref={toggleRef}
           onClick={() => setIsOpen(true)}
+          aria-label="Open chat"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
@@ -79,6 +89,7 @@ export default function ChatWidget() {
             <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
             <button 
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
             >
               ✕
@@ -98,7 +109,7 @@ export default function ChatWidget() {
                 {msg.content}
               </div>
             ))}
-            {loading && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Assistant is typing...</div>}
+            {loading && <div aria-live="polite" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Assistant is typing...</div>}
             <div ref={messagesEndRef} />
           </div>
 
@@ -108,13 +119,17 @@ export default function ChatWidget() {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your query..."
-              style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
+              aria-label="Message"
+              disabled={loading}
+              style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)', opacity: loading ? 0.7 : 1 }}
             />
             <button 
               onClick={handleSend}
-              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+              aria-label="Send message"
+              disabled={loading}
+              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
             >
               ➤
             </button>
