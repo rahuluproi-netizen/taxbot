@@ -2,8 +2,8 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -19,6 +19,8 @@ function chunkText(text, size = 1000, overlap = 200) {
 // @desc    Upload document and index vectors in Pinecone
 // @route   POST /api/ai/upload
 // @access  Private (CA/Admin)
+module.exports.chunkText = chunkText;
+
 exports.uploadKnowledge = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -32,18 +34,24 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
+    // 3. Generate Embeddings & Upsert to Pinecone in batches
+    // Use generateBatchEmbeddings for O(N/100) embedding calls
+    const embeddings = await generateBatchEmbeddings(chunks);
+    const timestamp = Date.now();
+
+    const vectors = chunks.map((chunk, i) => ({
+        id: `${req.user.id}_${timestamp}_${i}`,
+        values: embeddings[i],
+        metadata: {
+            text: chunk,
             caId: req.user.id,
             filename: req.file.originalname,
             chunkIndex: i
-        });
-    }
+        }
+    }));
+
+    // Batch upsert to Pinecone for O(1) network call (or O(N/batch) if very large)
+    await upsertVectors(vectors);
 
     // 4. (Optional) Store in Supabase Storage
     // const { error } = await supabase.storage.from('tax-documents').upload(`${req.user.id}/${req.file.originalname}`, dataBuffer);
