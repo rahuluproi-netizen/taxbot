@@ -2,8 +2,8 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -32,17 +32,30 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
+    // 3. Generate Embeddings & Upsert to Pinecone in batches
+    const batchSize = 100; // Gemini limit for batch embeddings
+    const timestamp = Date.now(); // Defined once to avoid multiple system calls
+
+    for (let i = 0; i < chunks.length; i += batchSize) {
+        const chunkBatch = chunks.slice(i, i + batchSize);
+
+        // 3a. Generate embeddings for the batch
+        const embeddings = await generateBatchEmbeddings(chunkBatch);
+
+        // 3b. Prepare vectors for Pinecone batch upsert
+        const vectors = chunkBatch.map((chunk, index) => ({
+            id: `${req.user.id}_${timestamp}_${i + index}`,
+            values: embeddings[index],
+            metadata: {
+                text: chunk,
+                caId: req.user.id,
+                filename: req.file.originalname,
+                chunkIndex: i + index
+            }
+        }));
         
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
-        });
+        // 3c. Batch upsert to Pinecone
+        await upsertVectors(vectors);
     }
 
     // 4. (Optional) Store in Supabase Storage
