@@ -1,0 +1,3 @@
+## 2026-06-23 - Focus Restoration on Component Unmount
+**Learning:** When a component that triggers a modal or dialog (like the ChatWidget toggle) unmounts when the dialog opens, focus must be manually restored to the trigger when the dialog closes. Since the trigger remounts only after the dialog state changes, using a `prevOpen` ref in a `useEffect` allows detecting the transition from open to closed and applying focus to the ref once it's available in the DOM.
+**Action:** Use the `prevOpen` ref pattern for all toggleable UI components that unmount their trigger element to ensure seamless keyboard navigation.
