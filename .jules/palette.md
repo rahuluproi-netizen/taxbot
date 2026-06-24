@@ -1,0 +1,3 @@
+## 2025-05-22 - ChatWidget Accessibility and Focus Management
+**Learning:** For interactive UI components that unmount/remount (like a toggleable chat widget), manual focus management using `useEffect` and `useRef` is essential for a good screen reader and keyboard user experience. Restoring focus to the trigger element when the component closes prevents the focus from being "lost" and resetting to the top of the page.
+**Action:** Always implement focus traps or focus restoration when building modal-like UI elements. Use ARIA attributes (`aria-expanded`, `aria-controls`, `role="dialog"`) to provide semantic context to assistive technologies.
