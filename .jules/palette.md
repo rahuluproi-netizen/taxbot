@@ -1,0 +1,3 @@
+## 2025-05-14 - ChatWidget Accessibility and Focus Management
+**Learning:** For components that unmount (like a modal or chat widget toggle), use a `prevOpen` ref in a `useEffect` to detect the `true` -> `false` transition for focus restoration. This ensures focus is applied to the trigger element only after it has remounted. Additionally, use `aria-live="polite"` and `role="status"` for asynchronous typing indicators to keep screen reader users informed without interrupting their flow.
+**Action:** Always implement focus restoration when closing modals or popups, and use semantic ARIA roles for loading states.
