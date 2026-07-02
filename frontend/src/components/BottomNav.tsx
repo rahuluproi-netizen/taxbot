@@ -32,19 +32,32 @@ export default function BottomNav() {
   });
 
   return (
-    <div className="mobile-only" style={navStyle}>
-      <Link href="/dashboard" style={linkStyle(pathname === '/dashboard')}>
+    <nav className="mobile-only" style={navStyle} aria-label="Mobile navigation">
+      <Link
+        href="/dashboard"
+        style={linkStyle(pathname === '/dashboard')}
+        aria-current={pathname === '/dashboard' ? 'page' : undefined}
+      >
         <span style={{ fontSize: '1.2rem' }}>🏠</span>
         <span>Home</span>
       </Link>
-      <Link href="/chat" style={linkStyle(pathname === '/chat')}>
+      <Link
+        href="/chat"
+        style={linkStyle(pathname === '/chat')}
+        aria-current={pathname === '/chat' ? 'page' : undefined}
+      >
         <span style={{ fontSize: '1.2rem' }}>💬</span>
         <span>AI Assistant</span>
       </Link>
-      <Link href="/login" onClick={() => localStorage.clear()} style={linkStyle(false)}>
+      <Link
+        href="/login"
+        onClick={() => localStorage.clear()}
+        style={linkStyle(false)}
+        aria-current={pathname === '/login' ? 'page' : undefined}
+      >
         <span style={{ fontSize: '1.2rem' }}>👤</span>
         <span>Profile</span>
       </Link>
-    </div>
+    </nav>
   );
 }
