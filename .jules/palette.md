@@ -1,0 +1,3 @@
+## 2025-05-22 - Chat Widget Accessibility and Focus Management
+**Learning:** For toggleable UI components like chat widgets, using `aria-modal="false"` on a `role="dialog"` container allows users to interact with the background while still providing semantic context. Implementing manual focus management (focusing the input on open and returning focus to the trigger on close) is essential for a smooth keyboard navigation experience. A `useRef` guard is necessary to prevent focus logic from running on the initial mount.
+**Action:** Always implement explicit focus management and appropriate ARIA roles for floating/toggled UI elements.
