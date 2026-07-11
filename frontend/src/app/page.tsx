@@ -32,7 +32,7 @@ export default function Home() {
         <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px', display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '1000px' }}>
           <div style={{ flex: '1 1 300px', textAlign: 'left' }}>
             <h3 style={{ color: 'var(--secondary)', marginBottom: '0.5rem', fontSize: '1.2rem' }}>Smart RAG Pipeline</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>Upload your tax notices and FAQs. The AI learns your firm's specific knowledge base instantly.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Upload your tax notices and FAQs. The AI learns your firm&apos;s specific knowledge base instantly.</p>
           </div>
           <div style={{ flex: '1 1 300px', textAlign: 'left' }}>
             <h3 style={{ color: 'var(--secondary)', marginBottom: '0.5rem', fontSize: '1.2rem' }}>Automatic Escalations</h3>
