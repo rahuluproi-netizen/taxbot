@@ -1,0 +1,3 @@
+## 2025-05-14 - [Accessibility & Focus Management]
+**Learning:** For floating or toggleable components like chat widgets, accessibility isn't just about ARIA labels. Proper focus management—automatically focusing the primary input on open and returning focus to the trigger on close—is critical for keyboard navigation and screen reader usability. Additionally, using `aria-modal="false"` allows users to still interact with the background while the chat is open.
+**Action:** Always implement `inputRef` and `toggleRef` with `useEffect` focus logic in similar components. Use `role="dialog"` for the container.
