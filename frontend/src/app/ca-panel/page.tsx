@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase';
 
 export default function CaPanel() {
   const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<{ id: string; subject: string; status: string; clients: { name: string; email: string } }[]>([]);
   const [stats, setStats] = useState({ clients: 0, tickets: 0, solved: 0 });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
@@ -42,8 +42,8 @@ export default function CaPanel() {
     const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
     setStats({
       clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
+      tickets: (ticketData as any[])?.filter(t => t.status === 'Open').length || 0,
+      solved: (ticketData as any[])?.filter(t => t.status === 'Resolved').length || 0
     });
   };
 
