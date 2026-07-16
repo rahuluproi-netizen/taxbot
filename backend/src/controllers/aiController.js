@@ -2,8 +2,8 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -32,20 +32,26 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
+    // 3. Generate Embeddings in Batch (Optimization: Reduces network roundtrips from O(N) to O(N/100))
+    const embeddings = await generateBatchEmbeddings(chunks);
+
+    // 4. Map to Pinecone vector format
+    const timestamp = Date.now();
+    const vectors = chunks.map((chunk, i) => ({
+        id: `${req.user.id}_${timestamp}_${i}`,
+        values: embeddings[i],
+        metadata: {
+            text: chunk,
             caId: req.user.id,
             filename: req.file.originalname,
             chunkIndex: i
-        });
-    }
+        }
+    }));
 
-    // 4. (Optional) Store in Supabase Storage
+    // 5. Upsert to Pinecone in Batch (Optimization: Reduces network roundtrips from O(N) to O(N/100))
+    await upsertVectors(vectors);
+
+    // 6. (Optional) Store in Supabase Storage
     // const { error } = await supabase.storage.from('tax-documents').upload(`${req.user.id}/${req.file.originalname}`, dataBuffer);
 
     // Cleanup temp file
@@ -74,7 +80,7 @@ exports.askQuery = async (req, res) => {
     
     const context = matches
         .map(match => match.metadata.text)
-        .join('\n---\n');
+        .join('\n----- \n');
 
     // 3. Generate Answer with Gemini
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
