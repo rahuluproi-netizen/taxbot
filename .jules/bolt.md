@@ -1,0 +1,3 @@
+## 2026-07-18 - Supabase Client Singleton Pattern
+**Learning:** Re-instantiating the Supabase client via `createBrowserClient` on every single invocation of `createClient()` causes redundant connections, repeated environment variable parsing, and increases frontend bundle instantiation cost. By caching the client instance, we can dramatically reduce garbage collection overhead and network handshakes.
+**Action:** Implement a standard singleton pattern for the Supabase browser client, typing the cache object using `SupabaseClient` from `@supabase/supabase-js` to strictly follow TypeScript configurations.
