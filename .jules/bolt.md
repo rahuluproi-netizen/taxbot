@@ -1,0 +1,3 @@
+## 2026-07-20 - Batching Document Embeddings and Vector Store Upserts
+**Learning:** Sequential O(N) network requests for generating embeddings and upserting vectors are a massive performance bottleneck. Implementing internal chunking with Promise.all and leveraging Gemini's batch API (`batchEmbedContents`) along with Pinecone bulk upserting reduces network roundtrips from O(N) to O(N/100).
+**Action:** Always prefer batched operations for third-party API integrations (Gemini, Pinecone) where supported, and partition arrays into recommended batch sizes (100) to respect rate limits while maximizing throughput.
