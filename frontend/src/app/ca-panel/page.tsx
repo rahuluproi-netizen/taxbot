@@ -4,15 +4,42 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
+interface Ticket {
+  id: string;
+  status: string;
+  subject: string;
+  clients?: {
+    name: string;
+    email: string;
+  };
+}
+
 export default function CaPanel() {
   const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState({ clients: 0, tickets: 0, solved: 0 });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   
   const supabase = createClient();
 
+  const fetchDashboardData = async (userId: string) => {
+    const { data: ticketData } = await supabase
+      .from('tickets')
+      .select('*, clients(name, email)')
+      .eq('ca_id', userId);
+
+    setTickets((ticketData as unknown as Ticket[]) || []);
+
+    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
+    setStats({
+      clients: clientCount || 0,
+      tickets: ticketData?.filter((t: any) => t.status === 'Open').length || 0,
+      solved: ticketData?.filter((t: any) => t.status === 'Resolved').length || 0
+    });
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -30,22 +57,6 @@ export default function CaPanel() {
     };
     checkUser();
   }, []);
-
-  const fetchDashboardData = async (userId: string) => {
-    const { data: ticketData } = await supabase
-      .from('tickets')
-      .select('*, clients(name, email)')
-      .eq('ca_id', userId);
-    
-    setTickets(ticketData || []);
-
-    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
-    setStats({
-      clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
-    });
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -74,7 +85,7 @@ export default function CaPanel() {
       } else {
         setUploadMessage(`Error: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       setUploadMessage('An error occurred during upload.');
     } finally {
       setUploadLoading(false);
