@@ -1,6 +1,8 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize the embedding model at the module level to avoid redundant object instantiation
+const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
 /**
  * Generates an embedding for a given text using Gemini.
@@ -9,8 +11,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function generateEmbedding(text) {
   try {
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const result = await model.embedContent(text);
+    const result = await embeddingModel.embedContent(text);
     return result.embedding.values;
   } catch (error) {
     console.error('Error generating embedding:', error);
@@ -18,4 +19,43 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings for a batch of texts using Gemini's batchEmbedContents.
+ * It handles the API's 100-item limit by partitioning the input array and runs concurrently.
+ * @param {string[]} texts - Array of input texts.
+ * @returns {Promise<number[][]>} - Array of vector embeddings.
+ */
+async function generateBatchEmbeddings(texts) {
+  if (!texts || texts.length === 0) return [];
+
+  const BATCH_LIMIT = 100;
+  const batches = [];
+
+  for (let i = 0; i < texts.length; i += BATCH_LIMIT) {
+    batches.push(texts.slice(i, i + BATCH_LIMIT));
+  }
+
+  try {
+    const batchPromises = batches.map(async (batch) => {
+      const requests = batch.map(text => ({
+        content: {
+          parts: [{ text }]
+        }
+      }));
+
+      const response = await embeddingModel.batchEmbedContents({ requests });
+      return response.embeddings.map(emb => emb.values);
+    });
+
+    const results = await Promise.all(batchPromises);
+    return results.flat();
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = {
+  generateEmbedding,
+  generateBatchEmbeddings
+};
