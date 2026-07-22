@@ -1,0 +1,3 @@
+## 2025-03-04 - Floating Chat Widget Focus Management with Mount Guard
+**Learning:** For interactive floating elements like chat assistants, setting `aria-modal="false"` allows the user to continue interacting with the underlying page. To ensure a seamless keyboard and screen reader user experience, we must manage focus: auto-focusing the primary input when the widget opens, and returning focus to the triggering toggle button when closed. To prevent the closing focus logic from firing on initial component mount, a `isFirstRender` React `useRef` guard is essential.
+**Action:** Implement `useRef(true)` as a guard in focus-shifting `useEffect` hooks linked to toggle states to bypass initial render execution, and always restore focus to the triggering element upon closure.
