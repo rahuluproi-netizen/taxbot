@@ -42,8 +42,8 @@ export default function CaPanel() {
     const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
     setStats({
       clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
+      tickets: ticketData?.filter((t: { status: string }) => t.status === 'Open').length || 0,
+      solved: ticketData?.filter((t: { status: string }) => t.status === 'Resolved').length || 0
     });
   };
 
