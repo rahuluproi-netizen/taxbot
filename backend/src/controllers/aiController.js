@@ -2,10 +2,12 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Gemini and its models at module level to prevent redundant object instantiation
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'mock_key');
+const chatModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Helper to chunk text
 function chunkText(text, size = 1000, overlap = 200) {
@@ -32,18 +34,23 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
-        });
-    }
+    // 3. Generate Embeddings & Upsert to Pinecone (Optimized with Batching)
+    console.log(`Generating batch embeddings for ${chunks.length} chunks...`);
+    const embeddings = await generateBatchEmbeddings(chunks);
+
+    const vectors = chunks.map((chunk, i) => ({
+      id: `${req.user.id}_${Date.now()}_${i}`,
+      values: embeddings[i],
+      metadata: {
+        text: chunk,
+        caId: req.user.id,
+        filename: req.file.originalname,
+        chunkIndex: i
+      }
+    }));
+
+    console.log(`Upserting ${vectors.length} vectors to Pinecone...`);
+    await upsertVectors(vectors);
 
     // 4. (Optional) Store in Supabase Storage
     // const { error } = await supabase.storage.from('tax-documents').upload(`${req.user.id}/${req.file.originalname}`, dataBuffer);
@@ -77,11 +84,10 @@ exports.askQuery = async (req, res) => {
         .join('\n---\n');
 
     // 3. Generate Answer with Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `You are an expert Tax Consultant AI. Answer the question based on the provided context from tax documents. If the answer is not in the context, say you don't know and suggest escalating to a CA.
     \nCONTEXT:\n${context || 'No specific document context found.'}\n\nQUESTION: ${query}`;
     
-    const result = await model.generateContent(prompt);
+    const result = await chatModel.generateContent(prompt);
     const response = await result.response;
     const answer = response.text();
 
