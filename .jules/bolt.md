@@ -1,0 +1,3 @@
+## 2025-03-05 - Batched Embeddings and Upserts for AI Documents
+**Learning:** Document indexing with sequential loops for generating Gemini embeddings and upserting vectors to Pinecone is extremely slow due to O(N) network roundtrips. By leveraging Gemini's `batchEmbedContents` and Pinecone's batch upserts, we can group chunks into batches of 100, reducing total roundtrips by over 98% (e.g., from 300 calls to 4 calls for 150 chunks).
+**Action:** Always batch embedding generation and vector upserts when processing multiple document chunks. Initialize generative AI models at the module level rather than per-request to avoid redundant object instantiation.
