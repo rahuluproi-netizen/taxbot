@@ -1,17 +1,17 @@
-const { Pinecone } = require('@pinecone-database/pinecone');
+const { Pinecone } = require("@pinecone-database/pinecone");
 
 let index;
 
 if (process.env.PINECONE_API_KEY) {
   const pc = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY
+    apiKey: process.env.PINECONE_API_KEY,
   });
-  index = pc.index(process.env.PINECONE_INDEX || 'taxbot');
+  index = pc.index(process.env.PINECONE_INDEX || "taxbot");
 } else {
-  console.warn('\n⚠️  PINECONE API KEY MISSING');
+  console.warn("\n⚠️  PINECONE API KEY MISSING");
   index = {
     upsert: () => Promise.resolve(),
-    query: () => Promise.resolve({ matches: [] })
+    query: () => Promise.resolve({ matches: [] }),
   };
 }
 
@@ -25,7 +25,28 @@ async function upsertVector(id, values, metadata) {
   try {
     await index.upsert([{ id, values, metadata }]);
   } catch (error) {
-    console.error('Error upserting to Pinecone:', error);
+    console.error("Error upserting to Pinecone:", error);
+    throw error;
+  }
+}
+
+/**
+ * Upserts multiple vectors into Pinecone.
+ * OPTIMIZATION: Batches multiple vectors to a max of 100 per call. This ensures
+ * high-throughput indexing and stays well within Pinecone payload size limits.
+ * @param {Array<{ id: string, values: number[], metadata: object }>} vectors - Array of vectors to upsert.
+ */
+async function upsertVectors(vectors) {
+  if (!vectors || vectors.length === 0) return;
+
+  try {
+    const batchSize = 100;
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      const batch = vectors.slice(i, i + batchSize);
+      await index.upsert(batch);
+    }
+  } catch (error) {
+    console.error("Error upserting vectors to Pinecone:", error);
     throw error;
   }
 }
@@ -42,13 +63,17 @@ async function queryVectors(vector, filter = {}, topK = 5) {
       vector,
       topK,
       includeMetadata: true,
-      filter
+      filter,
     });
     return response.matches;
   } catch (error) {
-    console.error('Error querying Pinecone:', error);
+    console.error("Error querying Pinecone:", error);
     throw error;
   }
 }
 
-module.exports = { upsertVector, queryVectors };
+module.exports = {
+  upsertVector,
+  upsertVectors,
+  queryVectors,
+};
