@@ -4,9 +4,22 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
+interface ClientInfo {
+  name: string;
+  email: string;
+}
+
+interface Ticket {
+  id: string;
+  subject: string;
+  status: string;
+  ca_id: string;
+  clients?: ClientInfo;
+}
+
 export default function CaPanel() {
   const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState({ clients: 0, tickets: 0, solved: 0 });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
@@ -37,13 +50,13 @@ export default function CaPanel() {
       .select('*, clients(name, email)')
       .eq('ca_id', userId);
     
-    setTickets(ticketData || []);
+    setTickets((ticketData as unknown as Ticket[]) || []);
 
     const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
     setStats({
       clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
+      tickets: (ticketData as unknown as Ticket[])?.filter((t: Ticket) => t.status === 'Open').length || 0,
+      solved: (ticketData as unknown as Ticket[])?.filter((t: Ticket) => t.status === 'Resolved').length || 0
     });
   };
 
@@ -74,7 +87,7 @@ export default function CaPanel() {
       } else {
         setUploadMessage(`Error: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       setUploadMessage('An error occurred during upload.');
     } finally {
       setUploadLoading(false);
