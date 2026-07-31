@@ -13,6 +13,22 @@ export default function CaPanel() {
   
   const supabase = createClient();
 
+  const fetchDashboardData = async (userId: string) => {
+    const { data: ticketData } = await supabase
+      .from('tickets')
+      .select('*, clients(name, email)')
+      .eq('ca_id', userId);
+
+    setTickets(ticketData || []);
+
+    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
+    setStats({
+      clients: clientCount || 0,
+      tickets: ticketData?.filter((t: { status: string }) => t.status === 'Open').length || 0,
+      solved: ticketData?.filter((t: { status: string }) => t.status === 'Resolved').length || 0
+    });
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -30,22 +46,6 @@ export default function CaPanel() {
     };
     checkUser();
   }, []);
-
-  const fetchDashboardData = async (userId: string) => {
-    const { data: ticketData } = await supabase
-      .from('tickets')
-      .select('*, clients(name, email)')
-      .eq('ca_id', userId);
-    
-    setTickets(ticketData || []);
-
-    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
-    setStats({
-      clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
-    });
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
