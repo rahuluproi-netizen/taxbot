@@ -1,0 +1,3 @@
+## 2025-10-24 - React 19 Key Event Compatibility & Custom Icon Buttons
+**Learning:** React 19/Next.js 16 projects warn/fail on using the deprecated `onKeyPress` event handler. Replacing it with `onKeyDown` avoids deprecation warnings and future-proofs key interaction handling. Additionally, custom elements and styled-div buttons lack default screen-reader descriptors, necessitating explicit `aria-label` additions.
+**Action:** Always prefer `onKeyDown` over `onKeyPress` when handling enter-key form submissions or chat submissions in Next.js 16. Ensure icon-only interactive controls (like toggle 💬 or send ➤ buttons) explicitly have `aria-label` tags.
