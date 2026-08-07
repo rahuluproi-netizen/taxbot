@@ -16,7 +16,7 @@ export const createClient = () => {
       from: () => ({
         select: () => ({ eq: () => ({ single: () => ({ data: null, error: { message: 'Supabase not configured' } }) }) }),
       })
-    } as any;
+    } as unknown as ReturnType<typeof createBrowserClient>;
   }
 
   return createBrowserClient(url, key);
