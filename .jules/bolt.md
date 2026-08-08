@@ -1,0 +1,3 @@
+## 2026-08-08 - Batched RAG Ingestion Optimization
+**Learning:** Sequential O(N) network roundtrips during document ingestion (calling embedding generation and Pinecone upsert for each chunk one-by-one) create a severe bottleneck. Batching embeddings using Gemini's `batchEmbedContents` and vectors using Pinecone's batch `upsert` (grouped up to 100 items to comply with API limits) reduces roundtrips to O(N/100). Additionally, instantiating Generative AI models outside of controller handlers at the module level prevents redundant object allocation and garbage collection overhead.
+**Action:** Always batch multi-item external API calls (such as embeddings and database upserts) and instantiate SDK client models at the module level rather than in-handler.
