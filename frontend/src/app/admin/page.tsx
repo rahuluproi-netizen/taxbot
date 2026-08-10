@@ -15,7 +15,9 @@ export default function AdminDashboard() {
       window.location.href = '/login';
     } else {
       // Mock user info for now, should fetch from /api/auth/me
-      setUser({ name: 'Admin User', role: 'Admin' });
+      Promise.resolve().then(() => {
+        setUser({ name: 'Admin User', role: 'Admin' });
+      });
     }
   }, []);
 
