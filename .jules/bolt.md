@@ -1,0 +1,3 @@
+## 2025-02-17 - Batching Embeddings and Vector Upserts to Optimize Document Indexing
+**Learning:** The previous implementation sequentially processed each text chunk, yielding O(N) sequential HTTP calls to both Gemini (embedding generation) and Pinecone (vector upserting). By leveraging Gemini's `batchEmbedContents` API and Pinecone's batch `upsert` API in chunks of up to 100, we can reduce network roundtrips from O(N) to O(N/100).
+**Action:** For document parsing and embedding indexing, always use batch embeddings and bulk upsert APIs with partition limits (e.g., 100) instead of sequential loops.
