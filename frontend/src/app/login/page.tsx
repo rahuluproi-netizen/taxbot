@@ -46,7 +46,7 @@ export default function Login() {
 
         window.location.href = role === 'Admin' ? '/admin' : role === 'CA' ? '/ca-panel' : '/dashboard';
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ export default function Login() {
           </button>
         </form>
         <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          Don't have an account? <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign up</Link>
+          Don&apos;t have an account? <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign up</Link>
         </p>
       </div>
     </div>
