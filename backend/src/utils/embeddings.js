@@ -18,4 +18,36 @@ async function generateEmbedding(text) {
   }
 }
 
-module.exports = { generateEmbedding };
+/**
+ * Generates embeddings in batch for an array of texts using Gemini.
+ * Reduces network roundtrips by batching up to 100 requests per API call.
+ * @param {string[]} texts - Array of input texts.
+ * @returns {Promise<number[][]>} - Array of vector embeddings.
+ */
+async function generateBatchEmbeddings(texts) {
+  if (!texts || texts.length === 0) return [];
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const batchSize = 100; // Gemini limit per batch request
+    const allEmbeddings = [];
+
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const chunk = texts.slice(i, i + batchSize);
+      const requests = chunk.map(text => ({
+        content: { parts: [{ text }] }
+      }));
+
+      const result = await model.batchEmbedContents({ requests });
+      const chunkEmbeddings = result.embeddings.map(e => e.values);
+      allEmbeddings.push(...chunkEmbeddings);
+    }
+
+    return allEmbeddings;
+  } catch (error) {
+    console.error('Error generating batch embeddings:', error);
+    throw error;
+  }
+}
+
+module.exports = { generateEmbedding, generateBatchEmbeddings };
