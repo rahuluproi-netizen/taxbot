@@ -2,10 +2,10 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MOCK_KEY');
 
 // Helper to chunk text
 function chunkText(text, size = 1000, overlap = 200) {
@@ -30,19 +30,27 @@ exports.uploadKnowledge = async (req, res) => {
 
     // 2. Chunk text
     const chunks = chunkText(text);
-    console.log(`Processing ${chunks.length} chunks...`);
+    console.log(`Processing ${chunks.length} chunks in batch...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
-        });
+    // 3. Batch Generate Embeddings & Upsert to Pinecone
+    if (chunks.length > 0) {
+      // Generate embeddings for all text chunks in a single batched API call (O(1) instead of O(N))
+      const embeddings = await generateBatchEmbeddings(chunks);
+
+      const now = Date.now();
+      const records = chunks.map((chunk, i) => ({
+        id: `${req.user.id}_${now}_${i}`,
+        values: embeddings[i],
+        metadata: {
+          text: chunk,
+          caId: req.user.id,
+          filename: req.file.originalname,
+          chunkIndex: i
+        }
+      }));
+
+      // Upsert all vector records to Pinecone in batched requests
+      await upsertVectors(records);
     }
 
     // 4. (Optional) Store in Supabase Storage
