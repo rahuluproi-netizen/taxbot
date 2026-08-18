@@ -2,10 +2,10 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MOCK_KEY');
 
 // Helper to chunk text
 function chunkText(text, size = 1000, overlap = 200) {
@@ -32,17 +32,23 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
-        });
+    if (chunks.length > 0) {
+      // 3. Generate Embeddings & Upsert to Pinecone in Batches (reduces roundtrips from O(N) to O(N/100))
+      const embeddings = await generateBatchEmbeddings(chunks);
+      const timestamp = Date.now();
+
+      const vectors = chunks.map((chunk, i) => ({
+        id: `${req.user.id}_${timestamp}_${i}`,
+        values: embeddings[i],
+        metadata: {
+          text: chunk,
+          caId: req.user.id,
+          filename: req.file.originalname,
+          chunkIndex: i
+        }
+      }));
+
+      await upsertVectors(vectors);
     }
 
     // 4. (Optional) Store in Supabase Storage
