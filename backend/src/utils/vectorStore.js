@@ -16,16 +16,36 @@ if (process.env.PINECONE_API_KEY) {
 }
 
 /**
- * Upserts a chunk of text with its embedding into Pinecone.
+ * Upserts a single chunk of text with its embedding into Pinecone.
  * @param {string} id - Unique ID for the chunk.
  * @param {number[]} values - The embedding vector.
  * @param {object} metadata - Metadata (clientId, caId, text, etc).
  */
 async function upsertVector(id, values, metadata) {
+  if (!index) return;
   try {
     await index.upsert([{ id, values, metadata }]);
   } catch (error) {
     console.error('Error upserting to Pinecone:', error);
+    throw error;
+  }
+}
+
+/**
+ * Batch upserts multiple vectors into Pinecone in chunks of up to batchSize (default 100).
+ * Batching reduces network overhead from O(N) to O(N / batchSize).
+ * @param {Array<{id: string, values: number[], metadata: object}>} records - Array of vector objects.
+ * @param {number} batchSize - Maximum vectors per upsert request (default 100).
+ */
+async function upsertVectors(records, batchSize = 100) {
+  if (!index || !records || records.length === 0) return;
+  try {
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      await index.upsert(batch);
+    }
+  } catch (error) {
+    console.error('Error batch upserting to Pinecone:', error);
     throw error;
   }
 }
@@ -37,6 +57,7 @@ async function upsertVector(id, values, metadata) {
  * @param {number} topK - Number of results.
  */
 async function queryVectors(vector, filter = {}, topK = 5) {
+  if (!index) return [];
   try {
     const response = await index.query({
       vector,
@@ -51,4 +72,4 @@ async function queryVectors(vector, filter = {}, topK = 5) {
   }
 }
 
-module.exports = { upsertVector, queryVectors };
+module.exports = { upsertVector, upsertVectors, queryVectors };
