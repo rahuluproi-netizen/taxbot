@@ -1,0 +1,3 @@
+## 2026-04-15 - Batched AI Embedding Generation & Vector Store Upserting
+**Learning:** In document RAG indexing pipelines, generating embeddings and upserting vector records sequentially for each chunk results in $2N$ sequential network roundtrips. Utilizing Gemini's `batchEmbedContents` and Pinecone's array-based `upsert` reduces network requests from $O(N)$ to $O(N / 100)$, dramatically reducing indexing latency.
+**Action:** When working with embedding APIs or vector databases, always batch requests into chunks (e.g. 100 items per request) rather than iterating sequentially over individual text chunks.
