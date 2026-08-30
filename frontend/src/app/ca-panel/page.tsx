@@ -4,14 +4,48 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { createClient } from '@/utils/supabase';
 
+interface Ticket {
+  id: string;
+  subject: string;
+  status: string;
+  clients?: {
+    name?: string;
+    email?: string;
+  };
+}
+
 export default function CaPanel() {
   const [user, setUser] = useState<{id: string, name: string, role: string} | null>(null);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState({ clients: 0, tickets: 0, solved: 0 });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   
   const supabase = createClient();
+
+  // Optimized: fetch tickets and client count in parallel using Promise.all to avoid sequential request waterfall
+  const fetchDashboardData = async (userId: string) => {
+    const [ticketResponse, clientResponse] = await Promise.all([
+      supabase
+        .from('tickets')
+        .select('*, clients(name, email)')
+        .eq('ca_id', userId),
+      supabase
+        .from('clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('ca_id', userId)
+    ]);
+
+    const ticketData: Ticket[] = ticketResponse.data || [];
+    const clientCount = clientResponse.count || 0;
+
+    setTickets(ticketData);
+    setStats({
+      clients: clientCount,
+      tickets: ticketData.filter((t: Ticket) => t.status === 'Open').length,
+      solved: ticketData.filter((t: Ticket) => t.status === 'Resolved').length
+    });
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -30,22 +64,6 @@ export default function CaPanel() {
     };
     checkUser();
   }, []);
-
-  const fetchDashboardData = async (userId: string) => {
-    const { data: ticketData } = await supabase
-      .from('tickets')
-      .select('*, clients(name, email)')
-      .eq('ca_id', userId);
-    
-    setTickets(ticketData || []);
-
-    const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('ca_id', userId);
-    setStats({
-      clients: clientCount || 0,
-      tickets: ticketData?.filter(t => t.status === 'Open').length || 0,
-      solved: ticketData?.filter(t => t.status === 'Resolved').length || 0
-    });
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -74,7 +92,7 @@ export default function CaPanel() {
       } else {
         setUploadMessage(`Error: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       setUploadMessage('An error occurred during upload.');
     } finally {
       setUploadLoading(false);
