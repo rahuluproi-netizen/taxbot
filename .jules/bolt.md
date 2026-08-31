@@ -1,0 +1,3 @@
+## 2025-05-18 - Batch Gemini Embeddings and Vector Upserts for RAG Document Uploads
+**Learning:** In backend RAG document processing, looping sequentially over text chunks to call single embedding APIs (`embedContent`) and vector store upserts (`upsertVector`) creates O(N) network roundtrips. Gemini supports `batchEmbedContents` with `{ content: { parts: [{ text }] } }` structure for up to 100 items per request, and vector DBs (like Pinecone) support batch upserts.
+**Action:** Always batch embedding requests and vector upserts in groups of 100 when building RAG document indexing pipelines to reduce network roundtrips to O(N/100).
