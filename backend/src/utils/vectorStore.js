@@ -22,10 +22,25 @@ if (process.env.PINECONE_API_KEY) {
  * @param {object} metadata - Metadata (clientId, caId, text, etc).
  */
 async function upsertVector(id, values, metadata) {
+  return upsertVectors([{ id, values, metadata }]);
+}
+
+/**
+ * Upserts multiple vectors into Pinecone in batches.
+ * Batches vectors in groups of up to 100 to maximize throughput and minimize network overhead.
+ * @param {Array<{id: string, values: number[], metadata: object}>} vectors - Array of vector objects.
+ */
+async function upsertVectors(vectors) {
+  if (!vectors || vectors.length === 0) return;
+
   try {
-    await index.upsert([{ id, values, metadata }]);
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < vectors.length; i += BATCH_SIZE) {
+      const batch = vectors.slice(i, i + BATCH_SIZE);
+      await index.upsert(batch);
+    }
   } catch (error) {
-    console.error('Error upserting to Pinecone:', error);
+    console.error('Error upserting vectors to Pinecone:', error);
     throw error;
   }
 }
@@ -51,4 +66,4 @@ async function queryVectors(vector, filter = {}, topK = 5) {
   }
 }
 
-module.exports = { upsertVector, queryVectors };
+module.exports = { upsertVector, upsertVectors, queryVectors };
