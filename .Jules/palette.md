@@ -1,0 +1,3 @@
+## 2025-05-18 - Semantic HTML Form & Focus Management in Dynamic Chat Widgets
+**Learning:** Icon-only toggle buttons and dynamic floating chat widgets often lack keyboard accessibility, focus management, and explicit form controls. Wrapping floating input controls in a `<form>` with disabled button states and programmatic input focus upon opening significantly improves keyboard navigation and screen reader usability without extra dependencies.
+**Action:** Always wrap interactive chat input/submit pairs in standard `<form>` elements and manage focus on modal/widget state transitions using `useRef`.
