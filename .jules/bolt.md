@@ -1,0 +1,3 @@
+## 2025-05-18 - Client-Side Singleton Pattern in Frontend Supabase Factory
+**Learning:** Calling client creation factories like `createClient()` on every component render/hook in Next.js causes unnecessary object allocations and duplicate auth state/listener initialization overhead. Restricting singleton caching to client-side runtime (`typeof window !== 'undefined'`) avoids cross-request SSR state leaks while reusing the client instance.
+**Action:** Always wrap client-side factory functions with a `typeof window !== 'undefined'` guard to return a cached singleton instance on subsequent calls.
