@@ -42,7 +42,7 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting.' }]);
     } finally {
       setLoading(false);
@@ -55,13 +55,14 @@ export default function ChatWidget() {
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
+          aria-label="Open AI chat assistant"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span role="img" aria-label="chat bubble">💬</span>
         </button>
       )}
 
@@ -79,6 +80,7 @@ export default function ChatWidget() {
             <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
             <button 
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat assistant"
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
             >
               ✕
@@ -108,15 +110,17 @@ export default function ChatWidget() {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your query..."
+              aria-label="Chat input"
               style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
             />
             <button 
               onClick={handleSend}
+              aria-label="Send message"
               style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
             >
-              ➤
+              <span role="img" aria-label="send arrow">➤</span>
             </button>
           </div>
         </div>
