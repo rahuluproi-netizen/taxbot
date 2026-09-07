@@ -1,0 +1,3 @@
+## 2025-03-07 - Accessible Icon Buttons and Form Controls in Chat Floating Widgets
+**Learning:** Floating chat widgets in Next.js apps often rely on raw emoji characters for toggle and action buttons (e.g. 💬, ➤, ✕) without explicit `aria-label`s or semantic `role="img"` wrappers, making them completely opaque to screen reader users and triggering ESLint warnings on deprecated keyboard handlers like `onKeyPress`.
+**Action:** When working on floating widgets or icon-only buttons, wrap decorative emojis in `<span role="img" aria-label="...">` and add explicit `aria-label` attributes to the parent `<button>` and `<input>` elements, while ensuring keyboard handlers use `onKeyDown`.
