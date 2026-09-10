@@ -19,7 +19,7 @@ export default function ChatWidget() {
   }, [messages, isOpen]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
@@ -42,7 +42,7 @@ export default function ChatWidget() {
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting.' }]);
     } finally {
       setLoading(false);
@@ -54,14 +54,16 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       {!isOpen && (
         <button 
+          type="button"
           onClick={() => setIsOpen(true)}
+          aria-label="Open TaxBot AI Assistant chat"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span role="img" aria-hidden="true">💬</span>
         </button>
       )}
 
@@ -78,7 +80,9 @@ export default function ChatWidget() {
           }}>
             <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
             <button 
+              type="button"
               onClick={() => setIsOpen(false)}
+              aria-label="Close TaxBot AI Assistant chat"
               style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
             >
               ✕
@@ -86,7 +90,12 @@ export default function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--background)' }}>
+          <div
+            role="log"
+            aria-live="polite"
+            aria-label="Chat history"
+            style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--background)' }}
+          >
             {messages.map((msg, i) => (
               <div key={i} style={{
                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
@@ -108,13 +117,26 @@ export default function ChatWidget() {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your query..."
+              aria-label="Type your query"
               style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
             />
             <button 
+              type="button"
               onClick={handleSend}
-              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+              style={{
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !input.trim() ? 0.6 : 1
+              }}
             >
               ➤
             </button>
