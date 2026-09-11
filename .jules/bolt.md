@@ -1,0 +1,3 @@
+## 2025-05-18 - Gemini & Pinecone Batch Vector Operations
+**Learning:** Sequential calls to `generateEmbedding` and `upsertVector` in document ingestion create a severe bottleneck of $2N$ network roundtrips. Gemini's `batchEmbedContents` requires requests formatted as `{ content: { parts: [{ text }] } }` with a limit of 100 items per batch, and Pinecone upsert also operates optimally in batches of 100 vectors.
+**Action:** Always partition text chunks into batches of 100, execute `batchEmbedContents` concurrently with `Promise.all`, and batch upsert vectors to Pinecone to reduce network roundtrips by >98%.
