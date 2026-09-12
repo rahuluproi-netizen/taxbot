@@ -31,6 +31,25 @@ async function upsertVector(id, values, metadata) {
 }
 
 /**
+ * Upserts multiple vector items into Pinecone in batches.
+ * Batching vector upserts reduces latency by bundling up to 100 vectors per Pinecone API call.
+ * @param {Array<{id: string, values: number[], metadata: object}>} vectors - Array of vector objects.
+ * @param {number} batchSize - Maximum vectors per batch request (default 100).
+ */
+async function upsertVectors(vectors, batchSize = 100) {
+  if (!vectors || vectors.length === 0) return;
+  try {
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      const batch = vectors.slice(i, i + batchSize);
+      await index.upsert(batch);
+    }
+  } catch (error) {
+    console.error('Error upserting batch to Pinecone:', error);
+    throw error;
+  }
+}
+
+/**
  * Queries Pinecone for relevant chunks.
  * @param {number[]} vector - The query embedding.
  * @param {object} filter - Metadata filters (e.g., { caId: '...' }).
@@ -51,4 +70,4 @@ async function queryVectors(vector, filter = {}, topK = 5) {
   }
 }
 
-module.exports = { upsertVector, queryVectors };
+module.exports = { upsertVector, upsertVectors, queryVectors };
