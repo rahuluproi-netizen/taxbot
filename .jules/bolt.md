@@ -1,0 +1,3 @@
+## 2025-02-13 - Batch Processing for Document Chunking Embeddings and Vector Upserts
+**Learning:** Sequential processing of PDF document text chunks in `uploadKnowledge` caused $2N$ sequential HTTP requests to Gemini API (`embedContent`) and Pinecone API (`upsert`). Gemini supports `batchEmbedContents` (up to 100 texts per request) and Pinecone SDK v7 supports batched upserts via `index.upsert({ records: batch })` (up to 100 vectors per call).
+**Action:** Always batch document chunk embeddings and vector store upserts in chunks of up to 100 to reduce network roundtrips from $2N$ to $\lceil N / 100 \rceil$. Note that `@pinecone-database/pinecone` v7 requires `{ records: [...] }` object structure in `index.upsert`.
