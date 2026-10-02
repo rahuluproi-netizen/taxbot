@@ -2,8 +2,8 @@ const supabase = require('../config/supabase');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const { generateEmbedding } = require('../utils/embeddings');
-const { upsertVector, queryVectors } = require('../utils/vectorStore');
+const { generateEmbedding, generateBatchEmbeddings } = require('../utils/embeddings');
+const { upsertVector, upsertVectors, queryVectors } = require('../utils/vectorStore');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -32,17 +32,23 @@ exports.uploadKnowledge = async (req, res) => {
     const chunks = chunkText(text);
     console.log(`Processing ${chunks.length} chunks...`);
 
-    // 3. Generate Embeddings & Upsert to Pinecone
-    for (let i = 0; i < chunks.length; i++) {
-        const embedding = await generateEmbedding(chunks[i]);
-        const id = `${req.user.id}_${Date.now()}_${i}`;
-        
-        await upsertVector(id, embedding, {
-            text: chunks[i],
-            caId: req.user.id,
-            filename: req.file.originalname,
-            chunkIndex: i
-        });
+    // 3. Generate Embeddings & Upsert to Pinecone in batch
+    // Reduces API calls from 2*N to 2*ceil(N/100)
+    if (chunks.length > 0) {
+      const embeddings = await generateBatchEmbeddings(chunks);
+      const timestamp = Date.now();
+      const records = chunks.map((chunk, i) => ({
+        id: `${req.user.id}_${timestamp}_${i}`,
+        values: embeddings[i],
+        metadata: {
+          text: chunk,
+          caId: req.user.id,
+          filename: req.file.originalname,
+          chunkIndex: i
+        }
+      }));
+
+      await upsertVectors(records);
     }
 
     // 4. (Optional) Store in Supabase Storage
@@ -71,7 +77,7 @@ exports.askQuery = async (req, res) => {
     // 2. Search Pinecone
     // Note: We filter by CA ID if we want private context
     const matches = await queryVectors(queryEmbedding, {}, 5); 
-    
+
     const context = matches
         .map(match => match.metadata.text)
         .join('\n---\n');
@@ -80,7 +86,7 @@ exports.askQuery = async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `You are an expert Tax Consultant AI. Answer the question based on the provided context from tax documents. If the answer is not in the context, say you don't know and suggest escalating to a CA.
     \nCONTEXT:\n${context || 'No specific document context found.'}\n\nQUESTION: ${query}`;
-    
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const answer = response.text();

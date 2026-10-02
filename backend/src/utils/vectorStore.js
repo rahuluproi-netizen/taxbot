@@ -16,16 +16,31 @@ if (process.env.PINECONE_API_KEY) {
 }
 
 /**
- * Upserts a chunk of text with its embedding into Pinecone.
+ * Upserts a single chunk vector into Pinecone.
  * @param {string} id - Unique ID for the chunk.
  * @param {number[]} values - The embedding vector.
  * @param {object} metadata - Metadata (clientId, caId, text, etc).
  */
 async function upsertVector(id, values, metadata) {
+  return upsertVectors([{ id, values, metadata }]);
+}
+
+/**
+ * Upserts multiple vectors into Pinecone in batches (up to 100 per call).
+ * Reduces Pinecone network requests from N to ceil(N / 100).
+ * @param {Array<{id: string, values: number[], metadata: object}>} vectors
+ */
+async function upsertVectors(vectors) {
+  if (!vectors || vectors.length === 0) return;
+
+  const BATCH_SIZE = 100;
   try {
-    await index.upsert([{ id, values, metadata }]);
+    for (let i = 0; i < vectors.length; i += BATCH_SIZE) {
+      const batch = vectors.slice(i, i + BATCH_SIZE);
+      await index.upsert({ records: batch });
+    }
   } catch (error) {
-    console.error('Error upserting to Pinecone:', error);
+    console.error('Error upserting vectors to Pinecone:', error);
     throw error;
   }
 }
@@ -51,4 +66,4 @@ async function queryVectors(vector, filter = {}, topK = 5) {
   }
 }
 
-module.exports = { upsertVector, queryVectors };
+module.exports = { upsertVector, upsertVectors, queryVectors };
