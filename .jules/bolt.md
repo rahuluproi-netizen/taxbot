@@ -1,0 +1,3 @@
+## 2025-05-15 - Pinecone SDK v7 Batch Upserts & Gemini Batch Embeddings
+**Learning:** In Pinecone SDK v7 (`@pinecone-database/pinecone`), `index.upsert` requires an options object formatted as `{ records: [...] }` rather than a raw array. Batching document chunks using Gemini's `batchEmbedContents` and Pinecone's batch upserts cuts network roundtrips from `2N` to `2 * ceil(N / 100)`.
+**Action:** Always batch vector store insertions and model embedding generations when indexing document chunks to avoid sequential API bottlenecks and maintain compatibility with Pinecone SDK v7 parameter requirements.
