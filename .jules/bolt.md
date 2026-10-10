@@ -1,0 +1,3 @@
+## 2025-05-18 - Batch Gemini Embeddings and Pinecone v7 Upserts in RAG Ingestion
+**Learning:** Document ingestion was executing $N$ sequential HTTP calls to Gemini (`embedContent`) and $N$ sequential HTTP calls to Pinecone (`index.upsert`), causing high network latency ($2N$ roundtrips). In `@pinecone-database/pinecone` v7, `index.upsert` expects an options object `{ records: [...] }` rather than a raw array. Gemini's `model.batchEmbedContents({ requests })` handles batch embedding generation up to 100 items per request.
+**Action:** Always batch RAG embedding generations and vector upserts into chunks of 100 items using `batchEmbedContents` and `upsert({ records: batch })` to convert $O(N)$ sequential network calls to $O(N/100)$.
