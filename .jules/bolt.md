@@ -1,0 +1,3 @@
+## 2025-05-18 - Batch Gemini Embeddings and Pinecone Vector Upserts
+**Learning:** Document indexing was performing sequential API calls ($N$ embeddings + $N$ upserts) per chunk. Using `model.batchEmbedContents()` and passing a record array directly to `index.upsert(records)` reduces $2N$ network roundtrips to $2 \lceil N/100 \rceil$ roundtrips. Note that in `@pinecone-database/pinecone` v7, `index.upsert` expects an array of records `[ { id, values, metadata } ]` directly rather than an object wrapper.
+**Action:** Always batch external API calls when processing array datasets, and pass array arguments directly to Pinecone `index.upsert`.
