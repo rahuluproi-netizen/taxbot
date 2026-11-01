@@ -55,22 +55,29 @@ export default function ChatWidget() {
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
+          aria-label="Open AI Tax Assistant chat"
+          title="Open AI Tax Assistant chat"
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
             color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span aria-hidden="true">💬</span>
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="glass-panel" style={{
-          width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
-          borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-        }}>
+        <div
+          role="dialog"
+          aria-label="TaxBot AI Assistant chat"
+          className="glass-panel"
+          style={{
+            width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
+            borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}
+        >
           {/* Header */}
           <div style={{ 
             background: 'var(--primary)', color: '#fff', padding: '1rem 1.5rem', 
@@ -79,14 +86,16 @@ export default function ChatWidget() {
             <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
             <button 
               onClick={() => setIsOpen(false)}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
+              aria-label="Close AI Tax Assistant chat"
+              title="Close chat"
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }}
             >
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--background)' }}>
+          <div aria-live="polite" style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--background)' }}>
             {messages.map((msg, i) => (
               <div key={i} style={{
                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
@@ -108,15 +117,29 @@ export default function ChatWidget() {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="Type your query..."
+              aria-label="Chat message query"
               style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
             />
             <button 
               onClick={handleSend}
-              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+              title="Send message"
+              style={{
+                background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !input.trim() ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
             >
-              ➤
+              <span aria-hidden="true">➤</span>
             </button>
           </div>
         </div>
