@@ -31,20 +31,23 @@ export default function BottomNav() {
     gap: '4px'
   });
 
+  const isDashboard = pathname === '/dashboard';
+  const isChat = pathname === '/chat';
+
   return (
-    <div className="mobile-only" style={navStyle}>
-      <Link href="/dashboard" style={linkStyle(pathname === '/dashboard')}>
-        <span style={{ fontSize: '1.2rem' }}>🏠</span>
+    <nav className="mobile-only" aria-label="Bottom Navigation" style={navStyle}>
+      <Link href="/dashboard" aria-current={isDashboard ? 'page' : undefined} style={linkStyle(isDashboard)}>
+        <span aria-hidden="true" style={{ fontSize: '1.2rem' }}>🏠</span>
         <span>Home</span>
       </Link>
-      <Link href="/chat" style={linkStyle(pathname === '/chat')}>
-        <span style={{ fontSize: '1.2rem' }}>💬</span>
+      <Link href="/chat" aria-current={isChat ? 'page' : undefined} style={linkStyle(isChat)}>
+        <span aria-hidden="true" style={{ fontSize: '1.2rem' }}>💬</span>
         <span>AI Assistant</span>
       </Link>
       <Link href="/login" onClick={() => localStorage.clear()} style={linkStyle(false)}>
-        <span style={{ fontSize: '1.2rem' }}>👤</span>
+        <span aria-hidden="true" style={{ fontSize: '1.2rem' }}>👤</span>
         <span>Profile</span>
       </Link>
-    </div>
+    </nav>
   );
 }
