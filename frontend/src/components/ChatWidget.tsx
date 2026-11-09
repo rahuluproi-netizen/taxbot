@@ -54,6 +54,9 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       {!isOpen && (
         <button 
+          type="button"
+          aria-label="Open AI tax assistant chat"
+          aria-expanded={false}
           onClick={() => setIsOpen(true)}
           style={{
             width: '60px', height: '60px', borderRadius: '50%', background: 'var(--primary)', 
@@ -61,16 +64,21 @@ export default function ChatWidget() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
           }}
         >
-          💬
+          <span aria-hidden="true">💬</span>
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="glass-panel" style={{
-          width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
-          borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-        }}>
+        <div
+          role="region"
+          aria-label="TaxBot AI Assistant"
+          className="glass-panel"
+          style={{
+            width: '350px', height: '500px', display: 'flex', flexDirection: 'column',
+            borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}
+        >
           {/* Header */}
           <div style={{ 
             background: 'var(--primary)', color: '#fff', padding: '1rem 1.5rem', 
@@ -78,10 +86,12 @@ export default function ChatWidget() {
           }}>
             <span style={{ fontWeight: 600 }}>TaxBot AI Assistant</span>
             <button 
+              type="button"
+              aria-label="Close chat window"
               onClick={() => setIsOpen(false)}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem', padding: '0.25rem' }}
             >
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
 
@@ -107,16 +117,26 @@ export default function ChatWidget() {
             <input 
               type="text" 
               value={input}
+              aria-label="Ask a tax question"
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your query..."
               style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)' }}
             />
             <button 
+              type="button"
+              aria-label="Send message"
+              disabled={loading || !input.trim()}
               onClick={handleSend}
-              style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+              style={{
+                background: loading || !input.trim() ? 'var(--text-secondary)' : 'var(--primary)',
+                color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !input.trim() ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
             >
-              ➤
+              <span aria-hidden="true">➤</span>
             </button>
           </div>
         </div>
